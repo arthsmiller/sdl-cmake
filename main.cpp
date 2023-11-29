@@ -83,21 +83,24 @@ void Game::onQuit() {
 }
 
 void Game::run() {
-    int past = SDL_GetTicks();
-    int now = past, pastFps = past;
+    Uint64 past = SDL_GetTicks64();
+    Uint64 now = past, pastFps = past;
     int fps = 0, framesSkipped = 0;
 
     SDL_Event event;
 
     while (running) {
-        int timeElapsed = 0;
+        Uint64 timeElapsed = 0;
 
         if (SDL_PollEvent(&event)) {
             switch (event.type) {
                 case SDL_QUIT:    onQuit();            break;
                 case SDL_KEYDOWN: onKeyDown(&event); break;
                 case SDL_KEYUP:   onKeyUp(&event);   break;
-                case SDL_MOUSEBUTTONDOWN: onMouseDown(event.button); break;
+                case SDL_MOUSEBUTTONDOWN:
+                    onMouseDown(event.button);
+                    onMouseOnSprite(sprite, event.button);
+                break;
                 case SDL_MOUSEBUTTONUP: onMouseUp(); break;
                 case SDL_MOUSEMOTION:
                     break;
@@ -105,7 +108,7 @@ void Game::run() {
         }
 
         // update/draw
-        timeElapsed = (now = SDL_GetTicks()) - past;
+        timeElapsed = (now = SDL_GetTicks64()) - past;
 
         if (timeElapsed >= UPDATE_INTERVAL) {
             past = now;
@@ -131,8 +134,6 @@ void Game::run() {
 }
 
 void Game::update() {
-    Helper helper;
-    std::cout << helper.randomInt(1, 10000);
     returnSpriteToCanvas(sprite);
 
     if (keys[SDLK_LEFT]) {
@@ -147,8 +148,8 @@ void Game::update() {
     else if (keys[SDLK_DOWN]) {
         sprite.y += HERO_SPEED;
     }
-    else if (clicks[SDL_BUTTON_LMASK]) {
-        sprite.x -= 10;
+    else if (clicks[SDL_BUTTON_LMASK] && isMouseOverSprite) {
+        moveSpriteToRandomPlace(sprite);
     }
 }
 
@@ -167,7 +168,6 @@ void Game::onMouseDown(SDL_MouseButtonEvent& mouseEvent)
         clicks[SDL_BUTTON_LMASK] = 1;
     }
 }
-
 
 void Game::onMouseUp()
 {
@@ -192,6 +192,29 @@ void Game::returnSpriteToCanvas(Sprite& sprite)
     else if (sprite.y < 0){
         sprite.y = DISPLAY_HEIGHT;
     }
+}
+
+void Game::onMouseOnSprite(Sprite& sprite, SDL_MouseButtonEvent& mouseButton)
+{
+    if (mouseButton.x >= sprite.x && mouseButton.x <= sprite.x + sprite.width &&
+        mouseButton.y >= sprite.y && mouseButton.y <= sprite.y + sprite.height
+        ){
+        isMouseOverSprite = true;
+
+        return;
+    }
+
+    isMouseOverSprite = false;
+}
+
+void Game::moveSpriteToRandomPlace(Sprite& sprite)
+{
+    Helper helper;
+std::cout << "BEGIN RAND" << std::endl;
+std::cout << sprite.x << std::endl;
+    sprite.x = helper.randomInt(0, DISPLAY_WIDTH);
+    sprite.y = helper.randomInt(0, DISPLAY_HEIGHT);
+    std::cout << "END RAND" << std::endl;
 }
 
 //

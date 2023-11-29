@@ -43,9 +43,12 @@ public:
     void run();
     void update();
     void returnSpriteToCanvas(Sprite& sprite);
+    void onMouseOnSprite(Sprite& sprite, SDL_MouseButtonEvent& mouseButton);
+    void moveSpriteToRandomPlace(Sprite& sprite);
 private:
     std::map<int, int> keys; // No SDLK_LAST. SDL2 migration guide suggests std::map
     std::map<int, int> clicks;
+    bool isMouseOverSprite;
     int frameSkip;
     int running;
     SDL_Window* window;
