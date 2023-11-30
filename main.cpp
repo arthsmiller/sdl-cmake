@@ -1,6 +1,7 @@
 // base stolen from https://github.com/andrew-lim/sdl2-boilerplate
 
 #include <iostream>
+#include <chrono>
 #include <SDL.h>
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/mersenne_twister.hpp>
@@ -58,7 +59,7 @@ void Game::draw() {
         spriteRect.y = sprite.y;
         spriteRect.w = sprite.width;
         spriteRect.h = sprite.height;
-        fillRect(&spriteRect, 255, 0, 0);
+        fillRect(&spriteRect, sprite.red, sprite.green, sprite.blue);
     }
 
     SDL_RenderPresent(renderer);
@@ -236,23 +237,38 @@ void Game::moveSpriteToRandomPlace(Sprite& sprite)
 
 void Game::addSprite(SpriteType type)
 {
+    Helper helper;
+
     sprites.emplace_back();
+
     moveSpriteToRandomPlace(sprites.back());
+
     sprites.back().type = type;
+
+    sprites.back().red = helper.randomInt(0, 255);
+    sprites.back().green = helper.randomInt(0, 255);
+    sprites.back().blue = helper.randomInt(0, 255);
 }
 
-void Game::removeSprite(const Sprite& spriteToRemove)
+void Game::removeSprite(Sprite& sprite)
 {
     sprites.erase(
         std::remove_if(
             sprites.begin(),
             sprites.end(),
-            [&spriteToRemove](const Sprite& sprite) {
-                return &sprite == &spriteToRemove;
+            [&sprite](const Sprite& lastSprite) {
+                return &lastSprite == &sprite;
             }
         ),
         sprites.end()
     );
+}
+
+void Game::changeSpriteColor(Sprite& sprite, int red, int green, int blue)
+{
+    sprite.red = red;
+    sprite.green = green;
+    sprite.blue = blue;
 }
 
 void Game::DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites)
@@ -274,10 +290,11 @@ void Game::DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites)
 // HELPER CLASS DEFINITIONS
 //
 int Helper::randomInt(const int min, const int max) {
-    const std::time_t now = std::time(nullptr);
-    boost::random::mt19937 rng(static_cast<unsigned>(now));
+    const auto now = std::chrono::high_resolution_clock::now();
+    const auto seed = static_cast<unsigned>(now.time_since_epoch().count());
 
-    const boost::random::uniform_int_distribution<> generate(min, max);
+    boost::random::mt19937 rng(seed);
+    boost::random::uniform_int_distribution<> generate(min, max);
 
     return generate(rng);
 }

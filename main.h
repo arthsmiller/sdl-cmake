@@ -24,7 +24,9 @@ enum SpriteType {
 
 class Sprite {
 public:
-    int x, y, width, height;
+    int x, y;
+    int width, height;
+    int red, green, blue;
     SpriteType type;
     bool isMouseOverSprite;
     Sprite() :
@@ -32,6 +34,9 @@ public:
         y(0),
         width(20),
         height(20),
+        red(255),
+        green(0),
+        blue(0),
         type(DEFAULT),
         isMouseOverSprite(false)
     {}
@@ -60,7 +65,10 @@ public:
     void onMouseOnSprite(boost::container::vector<Sprite>& sprites, SDL_MouseButtonEvent& mouseButton);
     void moveSpriteToRandomPlace(Sprite& sprite);
     void addSprite(SpriteType type = DEFAULT);
-    void removeSprite(const Sprite& spriteToRemove);
+    void removeSprite(Sprite& sprite);
+    void changeSpriteColor(Sprite& sprite, int red, int green, int blue);
+
+    // DEBUG shit
     void DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites);
 
 private:
