@@ -28,29 +28,38 @@ Game::~Game() {
 
 void Game::start() {
     int flags = SDL_WINDOW_SHOWN;
+
     if (SDL_Init(SDL_INIT_EVERYTHING)) {
         return;
     }
+
     if (SDL_CreateWindowAndRenderer(DISPLAY_WIDTH, DISPLAY_HEIGHT, flags, &window, &renderer)) {
         return;
     }
+
     this->running = 1;
+
+    addSprite();
+    addSprite();
+    addSprite(PLAYER);
+
     run();
 }
 
 void Game::draw() {
-    SDL_Rect spriteRect;
-
     // Clear screen
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
 
-    // Render hero
-    spriteRect.x = sprite.x;
-    spriteRect.y = sprite.y;
-    spriteRect.w = sprite.width;
-    spriteRect.h = sprite.height;
-    fillRect(&spriteRect, 255, 0, 0);
+    for (const auto& sprite : sprites) {
+        SDL_Rect spriteRect;
+
+        spriteRect.x = sprite.x;
+        spriteRect.y = sprite.y;
+        spriteRect.w = sprite.width;
+        spriteRect.h = sprite.height;
+        fillRect(&spriteRect, 255, 0, 0);
+    }
 
     SDL_RenderPresent(renderer);
 }
@@ -74,7 +83,7 @@ void Game::fillRect(SDL_Rect* rc, int r, int g, int b) {
 
 void Game::fpsChanged(int fps) {
     char szFps[128];
-    sprintf_s(szFps, "%s: %d FPS", "SDL2 Base C++ - Use Arrow Keys to Move", fps);
+    sprintf_s(szFps, "%s: %d FPS, %zd Sprites", "SDL2 Base C++", fps, sprites.size());
     SDL_SetWindowTitle(window, szFps);
 }
 
@@ -99,7 +108,7 @@ void Game::run() {
                 case SDL_KEYUP:   onKeyUp(&event);   break;
                 case SDL_MOUSEBUTTONDOWN:
                     onMouseDown(event.button);
-                    onMouseOnSprite(sprite, event.button);
+                    onMouseOnSprite(sprites, event.button);
                 break;
                 case SDL_MOUSEBUTTONUP: onMouseUp(); break;
                 case SDL_MOUSEMOTION:
@@ -134,22 +143,30 @@ void Game::run() {
 }
 
 void Game::update() {
-    returnSpriteToCanvas(sprite);
+DEBUG_printSpritesLocation(sprites);
 
-    if (keys[SDLK_LEFT]) {
-        sprite.x -= HERO_SPEED;
-    }
-    else if (keys[SDLK_RIGHT]) {
-        sprite.x += HERO_SPEED;
-    }
-    else if (keys[SDLK_UP]) {
-        sprite.y -= HERO_SPEED;
-    }
-    else if (keys[SDLK_DOWN]) {
-        sprite.y += HERO_SPEED;
-    }
-    else if (clicks[SDL_BUTTON_LMASK] && isMouseOverSprite) {
-        moveSpriteToRandomPlace(sprite);
+    for (Sprite& sprite : sprites) {
+        returnSpriteToCanvas(sprite);
+
+        if (sprite.type == PLAYER) {
+            if (keys[SDLK_LEFT]) {
+                sprite.x -= HERO_SPEED;
+            }
+            else if (keys[SDLK_RIGHT]) {
+                sprite.x += HERO_SPEED;
+            }
+            else if (keys[SDLK_UP]) {
+                sprite.y -= HERO_SPEED;
+            }
+            else if (keys[SDLK_DOWN]) {
+                sprite.y += HERO_SPEED;
+            }
+        }
+
+        if (clicks[SDL_BUTTON_LMASK] && sprite.isMouseOverSprite) {
+            moveSpriteToRandomPlace(sprite);
+            sprite.isMouseOverSprite = false;
+        }
     }
 }
 
@@ -194,27 +211,63 @@ void Game::returnSpriteToCanvas(Sprite& sprite)
     }
 }
 
-void Game::onMouseOnSprite(Sprite& sprite, SDL_MouseButtonEvent& mouseButton)
+void Game::onMouseOnSprite(boost::container::vector<Sprite>& sprites, SDL_MouseButtonEvent& mouseButton)
 {
-    if (mouseButton.x >= sprite.x && mouseButton.x <= sprite.x + sprite.width &&
-        mouseButton.y >= sprite.y && mouseButton.y <= sprite.y + sprite.height
-        ){
-        isMouseOverSprite = true;
+    for (Sprite& sprite : sprites) {
+        if (mouseButton.x >= sprite.x && mouseButton.x <= sprite.x + sprite.width &&
+            mouseButton.y >= sprite.y && mouseButton.y <= sprite.y + sprite.height
+            ){
+            sprite.isMouseOverSprite = true;
 
-        return;
+            return;
+        }
+
+        sprite.isMouseOverSprite = false;
     }
-
-    isMouseOverSprite = false;
 }
 
 void Game::moveSpriteToRandomPlace(Sprite& sprite)
 {
     Helper helper;
-std::cout << "BEGIN RAND" << std::endl;
-std::cout << sprite.x << std::endl;
+
     sprite.x = helper.randomInt(0, DISPLAY_WIDTH);
     sprite.y = helper.randomInt(0, DISPLAY_HEIGHT);
-    std::cout << "END RAND" << std::endl;
+}
+
+void Game::addSprite(SpriteType type)
+{
+    sprites.emplace_back();
+    moveSpriteToRandomPlace(sprites.back());
+    sprites.back().type = type;
+}
+
+void Game::removeSprite(const Sprite& spriteToRemove)
+{
+    sprites.erase(
+        std::remove_if(
+            sprites.begin(),
+            sprites.end(),
+            [&spriteToRemove](const Sprite& sprite) {
+                return &sprite == &spriteToRemove;
+            }
+        ),
+        sprites.end()
+    );
+}
+
+void Game::DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites)
+{
+    std::string type;
+
+    for (const auto& sprite : sprites) {
+        switch (sprite.type) {
+            case PLAYER: type = "player"; break;
+            case ENEMY: type = "enemy"; break;
+            default: type = "default"; break;
+        }
+
+        std::cout << type << ": " << sprite.x << " " << sprite.y << std::endl;
+    }
 }
 
 //

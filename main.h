@@ -5,6 +5,7 @@
 #ifndef MAIN_H
 #define MAIN_H
 #include <map>
+#include <boost/container/vector.hpp>
 
 #endif //MAIN_H
 
@@ -12,22 +13,33 @@ enum {
     DISPLAY_WIDTH = 480,
     DISPLAY_HEIGHT = 320,
     UPDATE_INTERVAL = 1000 / 60,
-    HERO_SPEED = 2
+    HERO_SPEED = 2,
+};
+
+enum SpriteType {
+    PLAYER,
+    ENEMY,
+    DEFAULT,
 };
 
 class Sprite {
 public:
     int x, y, width, height;
+    SpriteType type;
+    bool isMouseOverSprite;
     Sprite() :
         x(0),
         y(0),
         width(20),
-        height(20)
+        height(20),
+        type(DEFAULT),
+        isMouseOverSprite(false)
     {}
 };
 
 class Game {
 public:
+    // engine stuff
     Game();
     ~Game();
     void start();
@@ -42,18 +54,26 @@ public:
     void onMouseUp();
     void run();
     void update();
+
+    // sprite stuff
     void returnSpriteToCanvas(Sprite& sprite);
-    void onMouseOnSprite(Sprite& sprite, SDL_MouseButtonEvent& mouseButton);
+    void onMouseOnSprite(boost::container::vector<Sprite>& sprites, SDL_MouseButtonEvent& mouseButton);
     void moveSpriteToRandomPlace(Sprite& sprite);
+    void addSprite(SpriteType type = DEFAULT);
+    void removeSprite(const Sprite& spriteToRemove);
+    void DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites);
+
 private:
-    std::map<int, int> keys; // No SDLK_LAST. SDL2 migration guide suggests std::map
+    // engine stuff
+    std::map<int, int> keys;
     std::map<int, int> clicks;
-    bool isMouseOverSprite;
     int frameSkip;
     int running;
     SDL_Window* window;
     SDL_Renderer* renderer;
-    Sprite sprite;
+
+    // sprite stuff
+    boost::container::vector<Sprite> sprites;
 };
 
 class Helper {
