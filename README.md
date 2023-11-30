@@ -1,6 +1,6 @@
 # Todos
 - [ ] find out why sprite only moves 1x per second when being clicked on
-- [ ] spawn multiple sprites
+- [x] spawn multiple sprites
 - [ ] random color and pos for each new sprite
 - [ ] display text
 - [ ] create space around text, which "steals" from playable space
