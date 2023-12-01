@@ -4,6 +4,7 @@
 #include <chrono>
 #include <SDL.h>
 #include <boost/random/uniform_int_distribution.hpp>
+#include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/mersenne_twister.hpp>
 
 #include "main.h"
@@ -40,9 +41,10 @@ void Game::start() {
 
     this->running = 1;
 
-    addSprite();
-    addSprite();
     addSprite(PLAYER);
+
+    for (int i = 0; i < Helper::randomInt(0, MAX_SPRITES); ++i)
+        addSprite();
 
     run();
 }
@@ -144,10 +146,11 @@ void Game::run() {
 }
 
 void Game::update() {
-DEBUG_printSpritesLocation(sprites);
+// DEBUG_printSpritesLocation(sprites);
 
     for (Sprite& sprite : sprites) {
         returnSpriteToCanvas(sprite);
+        autoMoveSprite(sprite);
 
         if (sprite.type == PLAYER) {
             if (keys[SDLK_LEFT]) {
@@ -229,10 +232,8 @@ void Game::onMouseOnSprite(boost::container::vector<Sprite>& sprites, SDL_MouseB
 
 void Game::moveSpriteToRandomPlace(Sprite& sprite)
 {
-    Helper helper;
-
-    sprite.x = helper.randomInt(0, DISPLAY_WIDTH);
-    sprite.y = helper.randomInt(0, DISPLAY_HEIGHT);
+    sprite.x = Helper::randomInt(0, DISPLAY_WIDTH);
+    sprite.y = Helper::randomInt(0, DISPLAY_HEIGHT);
 }
 
 void Game::addSprite(SpriteType type)
@@ -245,9 +246,9 @@ void Game::addSprite(SpriteType type)
 
     sprites.back().type = type;
 
-    sprites.back().red = helper.randomInt(0, 255);
-    sprites.back().green = helper.randomInt(0, 255);
-    sprites.back().blue = helper.randomInt(0, 255);
+    sprites.back().red = Helper::randomInt(0, 255);
+    sprites.back().green = Helper::randomInt(0, 255);
+    sprites.back().blue = Helper::randomInt(0, 255);
 }
 
 void Game::removeSprite(Sprite& sprite)
@@ -269,6 +270,37 @@ void Game::changeSpriteColor(Sprite& sprite, int red, int green, int blue)
     sprite.red = red;
     sprite.green = green;
     sprite.blue = blue;
+}
+
+void Game::autoMoveSprite(Sprite& sprite)
+{
+    if (sprite.type == PLAYER)
+        return;
+
+    Helper helper;
+
+    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::high_resolution_clock::now().time_since_epoch()
+        ).count();
+
+    if (sprite.actionEnd == 0 || sprite.actionEnd <= now) {
+        sprite.currentAction = static_cast<SpriteAction>(Helper::randomInt(0, 8));
+        sprite.actionEnd = Helper::randomInt(0, 3000) + now;
+    }
+    else {
+        switch (sprite.currentAction) {
+            case STOP: break;
+            case UP: sprite.y += HERO_SPEED; break;
+            case RIGHT: sprite.x += HERO_SPEED; break;
+            case DOWN: sprite.y -= HERO_SPEED; break;
+            case LEFT: sprite.x -= HERO_SPEED; break;
+            case UPRIGHT: sprite.y += HERO_SPEED; sprite.x += HERO_SPEED; break;
+            case DOWNRIGHT: sprite.y -= HERO_SPEED; sprite.x += HERO_SPEED; break;
+            case DOWNLEFT: sprite.y -= HERO_SPEED; sprite.x -= HERO_SPEED; break;
+            case UPLEFT: sprite.y += HERO_SPEED; sprite.x -= HERO_SPEED; break;
+            default: break;
+        }
+    }
 }
 
 void Game::DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites)

@@ -14,12 +14,25 @@ enum {
     DISPLAY_HEIGHT = 320,
     UPDATE_INTERVAL = 1000 / 60,
     HERO_SPEED = 2,
+    MAX_SPRITES = 1000,
 };
 
 enum SpriteType {
     PLAYER,
     ENEMY,
     DEFAULT,
+};
+
+enum SpriteAction {
+    STOP,
+    UP,
+    RIGHT,
+    DOWN,
+    LEFT,
+    UPRIGHT,
+    DOWNRIGHT,
+    DOWNLEFT,
+    UPLEFT,
 };
 
 class Sprite {
@@ -29,6 +42,8 @@ public:
     int red, green, blue;
     SpriteType type;
     bool isMouseOverSprite;
+    SpriteAction currentAction;
+    Uint64 actionEnd;
     Sprite() :
         x(0),
         y(0),
@@ -38,7 +53,9 @@ public:
         green(0),
         blue(0),
         type(DEFAULT),
-        isMouseOverSprite(false)
+        isMouseOverSprite(false),
+        currentAction(STOP),
+        actionEnd(0)
     {}
 };
 
@@ -67,6 +84,7 @@ public:
     void addSprite(SpriteType type = DEFAULT);
     void removeSprite(Sprite& sprite);
     void changeSpriteColor(Sprite& sprite, int red, int green, int blue);
+    void autoMoveSprite(Sprite& sprite);
 
     // DEBUG shit
     void DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites);
@@ -86,5 +104,5 @@ private:
 
 class Helper {
 public:
-    int randomInt(int min, int max);
+    static int randomInt(int min, int max);
 };
