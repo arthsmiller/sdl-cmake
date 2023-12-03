@@ -108,9 +108,24 @@ public:
     static int randomInt(int min, int max);
 };
 
-class Curl {
+class OverpassApiClient {
 public:
-    std::string sendPost(std::string url, std::string query);
+    OverpassApiClient(const std::string& endpoint);
+    ~OverpassApiClient();
+
+    std::string executeQuery(const std::string& query);
+
 private:
-    size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output);
+    struct MemoryStruct {
+        char* memory;
+        size_t size;
+
+        MemoryStruct();
+        ~MemoryStruct();
+    };
+
+    static size_t WriteCallback(void* contents, size_t size, size_t nmemb, MemoryStruct* output);
+
+    CURL* curl_;
+    std::string endpoint_;
 };

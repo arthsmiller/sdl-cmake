@@ -7,6 +7,7 @@
 #include <boost/random/uniform_int_distribution.hpp>
 #include <boost/random/mersenne_twister.hpp>
 #include <curl/curl.h>
+#include <SDL_ttf.h>
 
 #include "main.h"
 
@@ -101,6 +102,13 @@ void Game::run() {
     int fps = 0, framesSkipped = 0;
 
     SDL_Event event;
+
+    std::string url = "https://overpass-api.de/api/interpreter";
+    std::string query = R"(node(43.731, 7.418, 43.732, 7.419); out body;)";
+    OverpassApiClient api(url);
+
+    std::cout << api.executeQuery(query) << std::endl;
+
 
     while (running) {
         Uint64 timeElapsed = 0;
@@ -333,52 +341,66 @@ int Helper::randomInt(const int min, const int max) {
 }
 
 //
-// CURL CLASS DEFINITIONS
+// API CLASS DEFINITIONS
 //
-std::string Curl::sendPost(std::string url, std::string query) {
-    std::string overpassQuery = R"(
-        node(37.783333,-122.416667,37.793333,-122.406667); out body;
-    )";
-
-    std::string overpassEndpoint = "https://overpass-api.de/api/interpreter";
-
+OverpassApiClient::OverpassApiClient(const std::string& endpoint) : endpoint_(endpoint), curl_(nullptr) {
     curl_global_init(CURL_GLOBAL_DEFAULT);
-    CURL* curl = curl_easy_init();
-
-    if (curl) {
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-
-        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, query.c_str());
-
-        std::string responseData;
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &Curl::WriteCallback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
-
-        CURLcode res = curl_easy_perform(curl);
-
-        if (res != CURLE_OK) {
-            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
-        } else {
-            curl_easy_cleanup(curl);
-            curl_global_cleanup();
-
-            return responseData;
-        }
-
-        curl_easy_cleanup(curl);
-    } else {
+    curl_ = curl_easy_init();
+    if (!curl_) {
         std::cerr << "Failed to initialize libcurl." << std::endl;
-
-        return "hi";
     }
-
-    curl_global_cleanup();
-
-    return "hi";
 }
 
-size_t Curl::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
+OverpassApiClient::~OverpassApiClient() {
+    if (curl_) {
+        curl_easy_cleanup(curl_);
+    }
+    curl_global_cleanup();
+}
+
+std::string OverpassApiClient::executeQuery(const std::string& query) {
+    if (!curl_) {
+        return "Failed to initialize libcurl.";
+    }
+
+    curl_easy_setopt(curl_, CURLOPT_URL, endpoint_.c_str());
+
+    curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, query.c_str());
+
+    MemoryStruct responseData;
+    curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, WriteCallback);
+    curl_easy_setopt(curl_, CURLOPT_WRITEDATA, &responseData);
+
+    CURLcode res = curl_easy_perform(curl_);
+
+    if (res != CURLE_OK) {
+        return "curl_easy_perform() failed: " + std::string(curl_easy_strerror(res));
+    }
+
+    return responseData.memory;
+}
+
+size_t OverpassApiClient::WriteCallback(void* contents, size_t size, size_t nmemb, MemoryStruct* output) {
     size_t total_size = size * nmemb;
-    output->append((char*)contents, total_size);
+    output->memory = static_cast<char*>(realloc(output->memory, output->size + total_size + 1));
+
+    if (output->memory == nullptr) {
+        std::cerr << "Failed to allocate memory." << std::endl;
+        return 0;
+    }
+
+    std::memcpy(&(output->memory[output->size]), contents, total_size);
+    output->size += total_size;
+    output->memory[output->size] = '\0';
+
     return total_size;
+}
+
+OverpassApiClient::MemoryStruct::MemoryStruct() : memory(nullptr), size(0) {}
+
+OverpassApiClient::MemoryStruct::~MemoryStruct() {
+    if (memory != nullptr) {
+        delete[] memory;
+        memory = nullptr;
+    }
 }
