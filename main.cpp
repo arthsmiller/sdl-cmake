@@ -1,11 +1,12 @@
 // base stolen from https://github.com/andrew-lim/sdl2-boilerplate
 
 #include <iostream>
+#include <string>
 #include <chrono>
 #include <SDL.h>
 #include <boost/random/uniform_int_distribution.hpp>
-#include <boost/random/uniform_real_distribution.hpp>
 #include <boost/random/mersenne_twister.hpp>
+#include <curl/curl.h>
 
 #include "main.h"
 
@@ -284,7 +285,7 @@ void Game::autoMoveSprite(Sprite& sprite)
         ).count();
 
     if (sprite.actionEnd == 0 || sprite.actionEnd <= now) {
-        sprite.currentAction = static_cast<SpriteAction>(Helper::randomInt(0, 8));
+        sprite.currentAction = static_cast<Direction>(Helper::randomInt(0, 8));
         sprite.actionEnd = Helper::randomInt(0, 3000) + now;
     }
     else {
@@ -329,4 +330,55 @@ int Helper::randomInt(const int min, const int max) {
     boost::random::uniform_int_distribution<> generate(min, max);
 
     return generate(rng);
+}
+
+//
+// CURL CLASS DEFINITIONS
+//
+std::string Curl::sendPost(std::string url, std::string query) {
+    std::string overpassQuery = R"(
+        node(37.783333,-122.416667,37.793333,-122.406667); out body;
+    )";
+
+    std::string overpassEndpoint = "https://overpass-api.de/api/interpreter";
+
+    curl_global_init(CURL_GLOBAL_DEFAULT);
+    CURL* curl = curl_easy_init();
+
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDS, query.c_str());
+
+        std::string responseData;
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &Curl::WriteCallback);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &responseData);
+
+        CURLcode res = curl_easy_perform(curl);
+
+        if (res != CURLE_OK) {
+            std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+        } else {
+            curl_easy_cleanup(curl);
+            curl_global_cleanup();
+
+            return responseData;
+        }
+
+        curl_easy_cleanup(curl);
+    } else {
+        std::cerr << "Failed to initialize libcurl." << std::endl;
+
+        return "hi";
+    }
+
+    curl_global_cleanup();
+
+    return "hi";
+}
+
+size_t Curl::WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
+    size_t total_size = size * nmemb;
+    output->append((char*)contents, total_size);
+    return total_size;
 }

@@ -23,7 +23,7 @@ enum SpriteType {
     DEFAULT,
 };
 
-enum SpriteAction {
+enum Direction {
     STOP,
     UP,
     RIGHT,
@@ -39,10 +39,11 @@ class Sprite {
 public:
     int x, y;
     int width, height;
+    int hitbox [4];
     int red, green, blue;
     SpriteType type;
     bool isMouseOverSprite;
-    SpriteAction currentAction;
+    Direction currentAction;
     Uint64 actionEnd;
     Sprite() :
         x(0),
@@ -105,4 +106,11 @@ private:
 class Helper {
 public:
     static int randomInt(int min, int max);
+};
+
+class Curl {
+public:
+    std::string sendPost(std::string url, std::string query);
+private:
+    size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output);
 };
