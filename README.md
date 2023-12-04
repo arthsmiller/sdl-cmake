@@ -2,7 +2,7 @@
 - [x] find out why sprite only moves 1x per second when being clicked on
 - [x] spawn multiple sprites
 - [x] random color and pos for each new sprite
-- [ ] display text
+- [x] display text
 - [ ] create space around text, which "steals" from playable space
 - [ ] change "player" sprite by click, which can be controlled then
 - [x] a bot, which moves the sprites randomly around
