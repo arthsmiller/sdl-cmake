@@ -37,9 +37,13 @@ void Game::start() {
         return;
     }
 
+    TTF_Init();
+
     if (SDL_CreateWindowAndRenderer(DISPLAY_WIDTH, DISPLAY_HEIGHT, flags, &window, &renderer)) {
         return;
     }
+
+    font = TTF_OpenFont("arial.ttf", 25);
 
     this->running = 1;
 
@@ -49,12 +53,25 @@ void Game::start() {
         addSprite();
 
     run();
+
+
+    TTF_CloseFont(font);
 }
 
 void Game::draw() {
     // Clear screen
     SDL_SetRenderDrawColor(renderer, 255, 255, 255, SDL_ALPHA_OPAQUE);
     SDL_RenderClear(renderer);
+
+    color = { 0, 0, 0 };
+    surface = TTF_RenderText_Solid(font,
+     "TEXT", color);
+    texture = SDL_CreateTextureFromSurface(renderer, surface);
+    int texW = 0;
+    int texH = 0;
+    SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
+    SDL_Rect dstrect = { 0, 0, texW, texH };
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
 
     for (const auto& sprite : sprites) {
         SDL_Rect spriteRect;
@@ -65,6 +82,7 @@ void Game::draw() {
         spriteRect.h = sprite.height;
         fillRect(&spriteRect, sprite.red, sprite.green, sprite.blue);
     }
+
 
     SDL_RenderPresent(renderer);
 }
@@ -78,6 +96,12 @@ void Game::stop() {
         SDL_DestroyWindow(window);
         window = NULL;
     }
+
+    SDL_DestroyTexture(texture);
+    SDL_FreeSurface(surface);
+
+    TTF_Quit();
+
     SDL_Quit();
 }
 
@@ -103,12 +127,10 @@ void Game::run() {
 
     SDL_Event event;
 
-    std::string url = "https://overpass-api.de/api/interpreter";
-    std::string query = R"(node(43.731, 7.418, 43.732, 7.419); out body;)";
-    OverpassApiClient api(url);
-
-    std::cout << api.executeQuery(query) << std::endl;
-
+    // std::string url = "https://overpass-api.de/api/interpreter";
+    // std::string query = R"(node(43.731, 7.418, 43.732, 7.419); out body;)";
+    // OverpassApiClient api(url);
+    // std::cout << api.executeQuery(query) << std::endl;
 
     while (running) {
         Uint64 timeElapsed = 0;

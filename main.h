@@ -98,6 +98,10 @@ private:
     int running;
     SDL_Window* window;
     SDL_Renderer* renderer;
+    TTF_Font * font;
+    SDL_Color color;
+    SDL_Surface * surface;
+    SDL_Texture * texture;
 
     // sprite stuff
     boost::container::vector<Sprite> sprites;

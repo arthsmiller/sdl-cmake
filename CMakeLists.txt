@@ -13,5 +13,20 @@ find_package(CURL REQUIRED)
 
 add_executable(sdl_cmake main.cpp)
 
-target_include_directories(sdl_cmake PRIVATE ${SDL2_INCLUDE_DIRS} ${SDL2_TTF_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS} ${CURL_INCLUDE_DIRS})
-target_link_libraries(sdl_cmake PRIVATE ${SDL2_LIBRARIES} ${SDL2_TTF_LIBRARIES} ${Boost_LIBRARIES} ${CURL_LIBRARIES})
+target_include_directories(sdl_cmake PRIVATE
+        ${SDL2_INCLUDE_DIRS}
+        ${SDL2_ttf_INCLUDE_DIRS}
+        ${Boost_INCLUDE_DIRS}
+        ${CURL_INCLUDE_DIRS}
+)
+target_link_libraries(sdl_cmake PRIVATE
+        ${SDL2_LIBRARIES}
+        "C:\\vcpkg\\installed\\x64-windows\\lib\\SDL2_ttf.lib"
+        ${Boost_LIBRARIES}
+        ${CURL_LIBRARIES}
+)
+
+message(STATUS "SDL2 Include Directories: ${SDL2_INCLUDE_DIRS}")
+message(STATUS "SDL2_ttf Include Directories: ${SDL2_ttf_INCLUDE_DIRS}")
+message(STATUS "Boost Include Directories: ${Boost_INCLUDE_DIRS}")
+message(STATUS "CURL Include Directories: ${CURL_INCLUDE_DIRS}")
