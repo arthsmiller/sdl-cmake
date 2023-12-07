@@ -8,6 +8,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <curl/curl.h>
 #include <SDL_ttf.h>
+#include <SDL2/SDL2_gfxPrimitives.h>
 
 #include "main.h"
 
@@ -54,7 +55,6 @@ void Game::start() {
 
     run();
 
-
     TTF_CloseFont(font);
 }
 
@@ -64,14 +64,15 @@ void Game::draw() {
     SDL_RenderClear(renderer);
 
     color = { 0, 0, 0 };
-    surface = TTF_RenderText_Solid(font,
-     "TEXT", color);
+    char TexNumOfSprites[128];
+    sprintf_s(TexNumOfSprites, "%zd Sprites", sprites.size());
+
+    surface = TTF_RenderText_Solid(font, TexNumOfSprites, color);
     texture = SDL_CreateTextureFromSurface(renderer, surface);
     int texW = 0;
     int texH = 0;
     SDL_QueryTexture(texture, NULL, NULL, &texW, &texH);
     SDL_Rect dstrect = { 0, 0, texW, texH };
-    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
 
     for (const auto& sprite : sprites) {
         SDL_Rect spriteRect;
@@ -83,6 +84,9 @@ void Game::draw() {
         fillRect(&spriteRect, sprite.red, sprite.green, sprite.blue);
     }
 
+   // filledCircleColor(renderer, 100,100,10, 0x00FF00FF);
+
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect);
 
     SDL_RenderPresent(renderer);
 }
@@ -112,7 +116,7 @@ void Game::fillRect(SDL_Rect* rc, int r, int g, int b) {
 
 void Game::fpsChanged(int fps) {
     char szFps[128];
-    sprintf_s(szFps, "%s: %d FPS, %zd Sprites", "SDL2 Base C++", fps, sprites.size());
+    sprintf_s(szFps, "%s: %d FPS", "SDL2 Base C++", fps);
     SDL_SetWindowTitle(window, szFps);
 }
 
@@ -179,6 +183,8 @@ void Game::run() {
 void Game::update() {
 // DEBUG_printSpritesLocation(sprites);
 
+    spawnNewEnemy();
+
     for (Sprite& sprite : sprites) {
         returnSpriteToCanvas(sprite);
         autoMoveSprite(sprite);
@@ -199,7 +205,8 @@ void Game::update() {
         }
 
         if (clicks[SDL_BUTTON_LMASK] && sprite.isMouseOverSprite) {
-            moveSpriteToRandomPlace(sprite);
+            // moveSpriteToRandomPlace(sprite);
+            removeSprite(sprite);
             sprite.isMouseOverSprite = false;
         }
     }
@@ -316,7 +323,7 @@ void Game::autoMoveSprite(Sprite& sprite)
 
     if (sprite.actionEnd == 0 || sprite.actionEnd <= now) {
         sprite.currentAction = static_cast<Direction>(Helper::randomInt(0, 8));
-        sprite.actionEnd = Helper::randomInt(0, 3000) + now;
+        sprite.actionEnd = Helper::randomInt(0, 300) + now;
     }
     else {
         switch (sprite.currentAction) {
@@ -331,6 +338,24 @@ void Game::autoMoveSprite(Sprite& sprite)
             case UPLEFT: sprite.y += HERO_SPEED; sprite.x -= HERO_SPEED; break;
             default: break;
         }
+    }
+}
+
+void Game::spawnNewEnemy()
+{
+    if (spawnCountdown == NULL) {
+        spawnCountdown = std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::high_resolution_clock::now().time_since_epoch()
+            ).count() + 300;
+    }
+
+    auto now = std::chrono::duration_cast<std::chrono::milliseconds>(
+    std::chrono::high_resolution_clock::now().time_since_epoch()
+    ).count();
+
+    if (spawnCountdown <= now) {
+        addSprite(ENEMY);
+        spawnCountdown = NULL;
     }
 }
 

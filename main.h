@@ -86,6 +86,7 @@ public:
     void removeSprite(Sprite& sprite);
     void changeSpriteColor(Sprite& sprite, int red, int green, int blue);
     void autoMoveSprite(Sprite& sprite);
+    void spawnNewEnemy();
 
     // DEBUG shit
     void DEBUG_printSpritesLocation(boost::container::vector<Sprite>& sprites);
@@ -105,6 +106,7 @@ private:
 
     // sprite stuff
     boost::container::vector<Sprite> sprites;
+    long long spawnCountdown;
 };
 
 class Helper {
